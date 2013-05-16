@@ -46,6 +46,7 @@ public class IMAPMoverTest {
 			}
 			msg.setSubject("Source Subject " + i);
 			msg.setText("Some body text");
+			msg.setHeader("Message-ID", "srcid-" + i + "@localhost");
 			srcMsgs.add(msg);
 		}
 		srcMbx.addAll(srcMsgs);
@@ -56,6 +57,7 @@ public class IMAPMoverTest {
 			msg.setRecipients(Message.RecipientType.CC, "cc" + i + "@localhost");
 			msg.setSubject("Destination Subject " + i);
 			msg.setText("Some body text");
+			msg.setHeader("Message-ID", "dstid-" + i + "@localhost");
 			dstMsgs.add(msg);
 		}
 		dstMbx.addAll(dstMsgs);

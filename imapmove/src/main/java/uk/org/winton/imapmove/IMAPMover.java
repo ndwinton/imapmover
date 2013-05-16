@@ -47,6 +47,9 @@ public class IMAPMover {
 		src.copyMessages(processed, dst);
 		LOG.info("Messages moved successfully");
 		
+		markNonSkippedMessagesForDeletion(msgs);
+		LOG.info("Original messages marked for deletion");
+		
 		if (expunge) {
 			src.expunge();
 		}
@@ -65,18 +68,10 @@ public class IMAPMover {
 			}
 			LOG.info("Message: " + srcMime.getSubject() + " (" + from + ")");
 			
-			// Skip messages already originating from the destination
-			if (messageIsFromDestination(srcMime)) {
-				LOG.info("From destination -- skipped");
+			if (messageShouldBeSkipped(srcMime)) {
 				continue;
 			}
 
-			// Skip deleted messages
-			if (srcMime.getFlags().contains(Flag.DELETED)) {
-				LOG.info("Already deleted -- skipped");
-				continue;
-			}
-			
 			// Update the Subject line, if necessary
 			dstMime.setSubject(getSubjectPrefix() + dstMime.getSubject());
 			
@@ -89,13 +84,25 @@ public class IMAPMover {
 			dstMime.setFlags(dstMime.getFlags(), false);
 			
 			processed.add(dstMime);
-			
-			// Mark source message for deletion
-			srcMime.setFlag(Flags.Flag.DELETED, true);
+
 		}
 		return processed.toArray(new Message[processed.size()]);
 	}
 
+	private boolean messageShouldBeSkipped(MimeMessage msg) throws MessagingException {
+		if (messageIsFromDestination(msg)) {
+			LOG.info("From destination -- skipped");
+			return true;
+		}
+		
+		if (msg.getFlags().contains(Flag.DELETED)) {
+			LOG.info("Already deleted -- skipped");
+			return true;
+		}
+		
+		return false;
+	}
+	
 	private boolean messageIsFromDestination(MimeMessage msg) throws MessagingException {
 		InternetAddress[] fromAddrs = (InternetAddress[])msg.getFrom();
 		if (fromAddrs != null) {
@@ -128,6 +135,17 @@ public class IMAPMover {
 		mime.setRecipients(type, toAddrs);
 	}
 	
+	private void markNonSkippedMessagesForDeletion(Message[] original) throws MessagingException {
+		
+		for (int i = 0; i < original.length; i++) {
+			MimeMessage srcMime = (MimeMessage)original[i];
+			
+			if (!messageShouldBeSkipped(srcMime)) {
+				srcMime.setFlag(Flags.Flag.DELETED, true);
+			}
+		}
+	}
+
 	public void setSubjectPrefix(String prefix) {
 		subjectPrefix = prefix;
 	}
