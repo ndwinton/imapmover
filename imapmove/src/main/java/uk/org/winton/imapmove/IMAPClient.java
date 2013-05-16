@@ -137,7 +137,7 @@ public class IMAPClient {
 	public Store getConnectedStore() throws MessagingException {
 		if (store == null) {
 			store = getSession().getStore(getURLName());
-			LOG.info("Connecting to " + getHost() + ":" + getPort() + " as " + getUsername() + " " + getURLName());
+			LOG.info("Connecting to " + getHost() + ":" + getPort() + " as " + getUsername());
 			store.connect();
 		}
 		return store;
