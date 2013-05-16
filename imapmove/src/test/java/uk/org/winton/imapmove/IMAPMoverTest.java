@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.mail.Address;
+import javax.mail.Flags.Flag;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Session;
@@ -175,7 +176,13 @@ public class IMAPMoverTest {
 			MimeMessage msg = new MimeMessage(session);
 			msg.setRecipients(Message.RecipientType.TO, SRCUSER + ", to" + i + "@localhost");
 			if (i % 2 == 0) {
-				msg.setFrom(DSTUSER);
+				// Two variations of address -- with or without full name present
+				if (i % 3 == 0) {
+					msg.setFrom(DSTUSER);
+				}
+				else {
+					msg.setFrom("Destination User <" + DSTUSER + ">");
+				}
 			}
 			msg.setSubject("Source Subject " + i);
 			msg.setText("Some body text");
@@ -190,5 +197,79 @@ public class IMAPMoverTest {
 		
 		assertEquals(SRC_MSG_COUNT / 2, srcMbx.size());
 		assertEquals(SRC_MSG_COUNT / 2, dstMbx.size());
+	}
+	
+	@Test
+	public void messagesShouldBeAddedToDestinationButNotRemovedFromSourceIfExpungeFlagIsFalse() throws MessagingException {
+		assertEquals(SRC_MSG_COUNT, srcMbx.size());
+		assertEquals(DST_MSG_COUNT, dstMbx.size());
+	
+		mover.move(false);
+		
+		assertEquals(SRC_MSG_COUNT + DST_MSG_COUNT, dstMbx.size());
+		assertEquals(SRC_MSG_COUNT, srcMbx.size());
+	}
+	
+	@Test
+	public void deletedMessagesShouldNotBeMoved() throws MessagingException {
+		srcMbx.clear();
+		dstMbx.clear();
+		List<Message> srcMsgs = new ArrayList<Message>();
+		Session session = Session.getInstance(System.getProperties());
+		
+		for (int i = 1; i <= SRC_MSG_COUNT; i++) {
+			MimeMessage msg = new MimeMessage(session);
+			msg.setFrom("from@somewhere");
+			msg.setRecipients(Message.RecipientType.TO, SRCUSER + ", to" + i + "@localhost");
+			if (i % 2 == 0) {
+				msg.setFlag(Flag.DELETED, true);
+			}
+			msg.setSubject("Source Subject " + i);
+			msg.setText("Some body text");
+			srcMsgs.add(msg);
+		}
+		srcMbx.addAll(srcMsgs);
+		
+		assertEquals(SRC_MSG_COUNT, srcMbx.size());
+		assertEquals(0, dstMbx.size());
+		
+		mover.move();
+		
+		assertEquals(0, srcMbx.size());
+		assertEquals(SRC_MSG_COUNT / 2, dstMbx.size());
+	}
+
+	@Test
+	public void messageFlagsShouldBeClearedFromSourceMessages() throws MessagingException {
+		srcMbx.clear();
+		dstMbx.clear();
+		List<Message> srcMsgs = new ArrayList<Message>();
+		Session session = Session.getInstance(System.getProperties());
+		
+		for (int i = 1; i <= SRC_MSG_COUNT; i++) {
+			MimeMessage msg = new MimeMessage(session);
+			msg.setFrom("from@somewhere");
+			msg.setRecipients(Message.RecipientType.TO, SRCUSER + ", to" + i + "@localhost");
+			if (i % 2 == 0) {
+				msg.setFlag(Flag.FLAGGED, true);
+				msg.setFlag(Flag.ANSWERED, true);
+			}
+			msg.setSubject("Source Subject " + i);
+			msg.setText("Some body text");
+			srcMsgs.add(msg);
+		}
+		srcMbx.addAll(srcMsgs);
+		
+		assertEquals(SRC_MSG_COUNT, srcMbx.size());
+		assertEquals(0, dstMbx.size());
+		
+		mover.move();
+		
+		assertEquals(0, srcMbx.size());
+		assertEquals(SRC_MSG_COUNT, dstMbx.size());
+		for (Message msg : dstMbx) {
+			assertFalse(msg.getFlags().contains(Flag.ANSWERED));
+			assertFalse(msg.getFlags().contains(Flag.FLAGGED));
+		}
 	}
 }

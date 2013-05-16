@@ -9,8 +9,12 @@ import javax.mail.Session;
 import javax.mail.Store;
 import javax.mail.URLName;
 
+import org.apache.log4j.Logger;
+
 public class IMAPClient {
 
+	private static final Logger LOG = Logger.getLogger(IMAPClient.class);
+	
 	static final String MAIL_DEBUG = "mail.debug";
 	static final String MAIL_FROM = "mail.from";
 	static final String MAIL_IMAP_SSL_ENABLE = "mail.imap.ssl.enable";
@@ -133,6 +137,7 @@ public class IMAPClient {
 	public Store getConnectedStore() throws MessagingException {
 		if (store == null) {
 			store = getSession().getStore(getURLName());
+			LOG.info("Connecting to " + getHost() + ":" + getPort() + " as " + getUsername() + " " + getURLName());
 			store.connect();
 		}
 		return store;
@@ -149,6 +154,7 @@ public class IMAPClient {
 
 	public Folder getMailboxFolder() throws MessagingException {
 		getConnectedStore();
+		LOG.debug("Getting mailbox folder: " + mailbox);
 		return store.getFolder(mailbox);
 	}
 

@@ -27,7 +27,7 @@ dependencies {
 		'org.easymock:easymock:3.0',
 	)
 	testRuntime(
-		'org.jvnet.mock-javamail:mock-javamail:1+',
+		//'org.jvnet.mock-javamail:mock-javamail:1+',
 	)	
 }
 
