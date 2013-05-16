@@ -86,7 +86,8 @@ public class IMAPMover {
 			replaceRecipient(Message.RecipientType.BCC, dstMime);
 			
 			// Clear any flags
-			//XX
+			dstMime.setFlags(dstMime.getFlags(), false);
+			
 			processed.add(dstMime);
 			
 			// Mark source message for deletion
