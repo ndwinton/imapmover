@@ -30,7 +30,7 @@ public class IMAPClient {
 	static final String MAIL_PORT = "mail.port";
 	static final String MAIL_STORE_PROTOCOL = "mail.store.protocol";
 	static final int DEFAULT_IMAP_PORT = 143;
-	static final int DEFAULT_LDAPS_PORT = 993;
+	static final int DEFAULT_IMAPS_PORT = 993;
 
 	private Properties properties;
 	private String mailbox;
@@ -95,7 +95,7 @@ public class IMAPClient {
 
 	public void setPort(int port) {
 		if (port <= 0) {
-			port = isSecure() ? DEFAULT_LDAPS_PORT : DEFAULT_IMAP_PORT;
+			port = isSecure() ? DEFAULT_IMAPS_PORT : DEFAULT_IMAP_PORT;
 		}
 		properties.put(MAIL_PORT, Integer.toString(port));
 	}
