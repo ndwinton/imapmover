@@ -1,5 +1,9 @@
 package uk.org.winton.imapmove;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,13 +23,13 @@ import org.apache.log4j.Logger;
 public class IMAPMover {
 	private static final Logger LOG = Logger.getLogger(IMAPMover.class);
 	
-	private IMAPClient srcClient;
-	private IMAPClient dstClient;
+	private IMAPClient source;
+	private IMAPClient destination;
 	private String subjectPrefix;
 	
 	public IMAPMover(IMAPClient src, IMAPClient dst) {
-		this.srcClient = src;
-		this.dstClient = dst;
+		this.source = src;
+		this.destination = dst;
 	}
 
 	public void move() throws MessagingException {
@@ -34,8 +38,8 @@ public class IMAPMover {
 	
 	public void move(boolean expunge) throws MessagingException {
 		LOG.info("Starting message move" );
-		Folder src = srcClient.getMailboxFolder();
-		Folder dst = dstClient.getMailboxFolder();
+		Folder src = source.getMailboxFolder();
+		Folder dst = destination.getMailboxFolder();
 		
 		src.open(Folder.READ_WRITE);
 		Message[] msgs = src.getMessages();
@@ -68,7 +72,7 @@ public class IMAPMover {
 			}
 			LOG.info("Message: " + srcMime.getSubject() + " (" + from + ")");
 			
-			if (messageShouldBeSkipped(srcMime)) {
+			if (messageShouldBeSkipped(srcMime, true)) {
 				continue;
 			}
 
@@ -89,14 +93,18 @@ public class IMAPMover {
 		return processed.toArray(new Message[processed.size()]);
 	}
 
-	private boolean messageShouldBeSkipped(MimeMessage msg) throws MessagingException {
+	private boolean messageShouldBeSkipped(MimeMessage msg, boolean doLog) throws MessagingException {
 		if (messageIsFromDestination(msg)) {
-			LOG.info("From destination -- skipped");
+			if (doLog) {
+				LOG.info("From destination -- skipped");
+			}
 			return true;
 		}
 		
 		if (msg.getFlags().contains(Flag.DELETED)) {
-			LOG.info("Already deleted -- skipped");
+			if (doLog) {
+				LOG.info("Already deleted -- skipped");
+			}
 			return true;
 		}
 		
@@ -108,7 +116,7 @@ public class IMAPMover {
 		if (fromAddrs != null) {
 			boolean fromDestination = false;
 			for (InternetAddress from : fromAddrs) {
-				if (dstClient.getEmailAddress().equals(from.getAddress())) {
+				if (destination.getEmailAddress().equals(from.getAddress())) {
 					fromDestination = true;
 				}
 			}
@@ -127,8 +135,8 @@ public class IMAPMover {
 		
 		for (int i = 0; i < toAddrs.length; i++) {
 			InternetAddress addr = (InternetAddress)toAddrs[i];
-			if (srcClient.getEmailAddress().equals(addr.getAddress())) {
-				InternetAddress newTo = new InternetAddress(dstClient.getEmailAddress());
+			if (source.getEmailAddress().equals(addr.getAddress())) {
+				InternetAddress newTo = new InternetAddress(destination.getEmailAddress());
 				toAddrs[i] = newTo;
 			}
 		}
@@ -140,10 +148,26 @@ public class IMAPMover {
 		for (int i = 0; i < original.length; i++) {
 			MimeMessage srcMime = (MimeMessage)original[i];
 			
-			if (!messageShouldBeSkipped(srcMime)) {
+			if (!messageShouldBeSkipped(srcMime, false)) {
 				srcMime.setFlag(Flags.Flag.DELETED, true);
 			}
 		}
+	}
+
+	public IMAPClient getSource() {
+		return source;
+	}
+
+	public void setSource(IMAPClient srcClient) {
+		this.source = srcClient;
+	}
+
+	public IMAPClient getDestination() {
+		return destination;
+	}
+
+	public void setDestination(IMAPClient dstClient) {
+		this.destination = dstClient;
 	}
 
 	public void setSubjectPrefix(String prefix) {
@@ -154,20 +178,28 @@ public class IMAPMover {
 		return subjectPrefix == null ? "" : subjectPrefix;
 	}
 
-	public static void main(String[] args) throws MessagingException {
-		if (args.length != 3) {
+	public static void main(String[] args) throws MessagingException, FileNotFoundException, IOException {
+		IMAPMover mover = null;
+		
+		if (args.length == 3) {
+			mover = new IMAPMover(new IMAPClient(args[0]), new IMAPClient(args[1]));
+			mover.setSubjectPrefix(args[2]);
+		}
+		else if (args.length == 2) {
+			IMAPClient src = new IMAPClient();
+			src.initialiseFromProperties(new FileInputStream(new File(args[0])), "source.");
+			IMAPClient dest = new IMAPClient();
+			dest.initialiseFromProperties(new FileInputStream(new File(args[0])), "destination.");
+			mover = new IMAPMover(src, dest);
+			mover.setSubjectPrefix(args[1]);
+		}
+		else {
 			System.err.println("Usage: IMAPMover src-imap-url dest-imap-url prefix");
+			System.err.println("  or   IMAPMover properties-file prefix");
 			System.exit(1);
 		}
 		
-		IMAPMover mover = new IMAPMover(new IMAPClient(args[0]), new IMAPClient(args[1]));
-		mover.setSubjectPrefix(args[2]);
-		//try {
-			mover.move(false);
-		//} catch (MessagingException e) {
-		//	LOG.error("Exception: " + e.getMessage());
-		//	System.exit(1);
-		//}
+		mover.move(true);
 	}
 
 }

@@ -1,10 +1,11 @@
 package uk.org.winton.imapmove;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 
 import javax.mail.Folder;
 import javax.mail.MessagingException;
-import javax.mail.NoSuchProviderException;
 import javax.mail.Session;
 import javax.mail.Store;
 import javax.mail.URLName;
@@ -12,6 +13,10 @@ import javax.mail.URLName;
 import org.apache.log4j.Logger;
 
 public class IMAPClient {
+
+	private static final String PROTOCOL_IMAPS = "imaps";
+
+	private static final String PROTOCOL_IMAP = "imap";
 
 	private static final Logger LOG = Logger.getLogger(IMAPClient.class);
 	
@@ -24,7 +29,7 @@ public class IMAPClient {
 	static final String MAIL_HOST = "mail.host";
 	static final String MAIL_PORT = "mail.port";
 	static final String MAIL_STORE_PROTOCOL = "mail.store.protocol";
-	static final int DEFAULT_LDAP_PORT = 143;
+	static final int DEFAULT_IMAP_PORT = 143;
 	static final int DEFAULT_LDAPS_PORT = 993;
 
 	private Properties properties;
@@ -49,6 +54,10 @@ public class IMAPClient {
 		setEmailAddress(null);
 	}
 
+
+	public IMAPClient() {
+		properties = new Properties();
+	}
 
 	public void setUsername(String username) {
 		if (username == null) {
@@ -86,7 +95,7 @@ public class IMAPClient {
 
 	public void setPort(int port) {
 		if (port <= 0) {
-			port = isSSL() ? DEFAULT_LDAPS_PORT : DEFAULT_LDAP_PORT;
+			port = isSecure() ? DEFAULT_LDAPS_PORT : DEFAULT_IMAP_PORT;
 		}
 		properties.put(MAIL_PORT, Integer.toString(port));
 	}
@@ -105,18 +114,22 @@ public class IMAPClient {
 
 	public void setProtocol(String protocol) {
 		if (protocol == null) {
-			protocol = "imap";
+			protocol = PROTOCOL_IMAP;
 		}
 		properties.put(MAIL_STORE_PROTOCOL, protocol);
-		properties.put(MAIL_IMAP_SSL_ENABLE, (isSSL() ? "true" : "false"));
+		properties.put(MAIL_IMAP_SSL_ENABLE, (isSecure() ? "true" : "false"));
 	}
 	
 	public String getProtocol() {
 		return properties.getProperty(MAIL_STORE_PROTOCOL);
 	}
 	
-	public boolean isSSL() {
-		return "imaps".equals(getProtocol()) ? true : false;
+	public void setSecure(boolean enable) {
+		setProtocol(enable ? PROTOCOL_IMAPS : PROTOCOL_IMAP);
+	}
+	
+	public boolean isSecure() {
+		return PROTOCOL_IMAPS.equals(getProtocol()) ? true : false;
 	}
 
 	public Properties getProperties() {
@@ -172,6 +185,22 @@ public class IMAPClient {
 	
 	public String getEmailAddress() {
 		return properties.getProperty(MAIL_FROM);
+	}
+
+	public void initialiseFromProperties(InputStream stream, String prefix) throws IOException {
+		if (prefix == null) {
+			prefix = "";
+		}
+		Properties props = new Properties();
+		props.load(stream);
+		setHost(props.getProperty(prefix + "host"));
+		setPort(Integer.parseInt(props.getProperty(prefix + "port", "0")));
+		setSecure(Boolean.parseBoolean(props.getProperty(prefix + "secure", "false")));
+		setUsername(props.getProperty(prefix + "username"));
+		setPassword(props.getProperty(prefix + "password"));
+		setEmailAddress(props.getProperty(prefix + "email"));
+		setMailbox(props.getProperty(prefix + "mailbox"));
+		setDebug(Boolean.parseBoolean(props.getProperty(prefix + "debug", "false")));
 	}
 
 }

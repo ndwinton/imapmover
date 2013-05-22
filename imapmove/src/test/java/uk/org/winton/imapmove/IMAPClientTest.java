@@ -1,11 +1,12 @@
 package uk.org.winton.imapmove;
 
-import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 
 import javax.mail.Folder;
@@ -35,7 +36,7 @@ public class IMAPClientTest {
 		assertEquals("server", client.getHost());
 		assertEquals(9999, client.getPort());
 		assertEquals("mailbox", client.getMailbox());
-		assertTrue("expecting SSL", client.isSSL());
+		assertTrue("expecting SSL", client.isSecure());
 	}
 
 	@Test
@@ -46,7 +47,7 @@ public class IMAPClientTest {
 		assertEquals("server", client.getHost());
 		assertEquals(9999, client.getPort());
 		assertEquals("mailbox", client.getMailbox());
-		assertTrue("expecting SSL", client.isSSL());
+		assertTrue("expecting SSL", client.isSecure());
 	}
 	
 	@Test
@@ -170,5 +171,19 @@ public class IMAPClientTest {
 		client.setEmailAddress("other@elsewhere.com");
 		assertEquals("other@elsewhere.com", client.getEmailAddress());
 		
+	}
+	
+	@Test
+	public void shouldBeAbleToInitialiseUsingPropertiesFileAndPrefix() throws IOException {
+		IMAPClient client = new IMAPClient();
+		InputStream stream = ClassLoader.getSystemResourceAsStream("test.properties");
+		client.initialiseFromProperties(stream, "source.");
+		assertEquals("source.com", client.getHost());
+		assertEquals(1234, client.getPort());
+		assertEquals("imaps", client.getProtocol());
+		assertEquals("suser", client.getUsername());
+		assertEquals("spass", client.getPassword());
+		assertEquals("source.user@source.com", client.getEmailAddress());
+		assertEquals(true, client.isDebug());
 	}
 }
