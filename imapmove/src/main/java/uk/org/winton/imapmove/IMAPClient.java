@@ -23,7 +23,7 @@ public class IMAPClient {
 	static final String MAIL_DEBUG = "mail.debug";
 	static final String MAIL_FROM = "mail.from";
 	static final String MAIL_IMAP_SSL_ENABLE = "mail.imap.ssl.enable";
-	static final String DEFAULT_MAILBOX = "INBOX";
+	static final String DEFAULT_MAILBOX = "Inbox";
 	static final String MAIL_USER = "mail.user";
 	static final String MAIL_PASSWORD = "mail.password";
 	static final String MAIL_HOST = "mail.host";
@@ -37,6 +37,7 @@ public class IMAPClient {
 	private Session session;
 	private Store store;
 	private boolean debugEnabled;
+	private int port = 0;
 		
 	public IMAPClient(String url) {
 		this(new URLName(url));
@@ -94,6 +95,7 @@ public class IMAPClient {
 	}
 
 	public void setPort(int port) {
+		this.port = port;
 		if (port <= 0) {
 			port = isSecure() ? DEFAULT_IMAPS_PORT : DEFAULT_IMAP_PORT;
 		}
@@ -118,6 +120,7 @@ public class IMAPClient {
 		}
 		properties.put(MAIL_STORE_PROTOCOL, protocol);
 		properties.put(MAIL_IMAP_SSL_ENABLE, (isSecure() ? "true" : "false"));
+		setPort(this.port);
 	}
 	
 	public String getProtocol() {

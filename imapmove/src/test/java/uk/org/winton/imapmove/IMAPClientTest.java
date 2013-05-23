@@ -89,7 +89,7 @@ public class IMAPClientTest {
 	@Test
 	public void shouldSetDefaultMailboxPath() {
 		IMAPClient client = new IMAPClient("imap://localhost");
-		assertEquals("INBOX", client.getMailbox());		
+		assertEquals("Inbox", client.getMailbox());		
 	}
 	
 	@Test
@@ -185,5 +185,31 @@ public class IMAPClientTest {
 		assertEquals("spass", client.getPassword());
 		assertEquals("source.user@source.com", client.getEmailAddress());
 		assertEquals(true, client.isDebug());
+	}
+	
+	@Test
+	public void portSetLessOrEqualToZeroShouldGiveCorrectDefaultDependingOnSecurity() {
+		IMAPClient client = new IMAPClient();
+		
+		// Less than zero --default
+		client.setPort(-1);
+		client.setSecure(false);
+		assertEquals(143, client.getPort());
+		client.setSecure(true);
+		assertEquals(993, client.getPort());
+		
+		// Zero -- default
+		client.setPort(0);
+		assertEquals(993, client.getPort());
+		client.setSecure(false);
+		assertEquals(143, client.getPort());
+		
+		// Explicit		
+		client.setPort(143);
+		assertEquals(143, client.getPort());
+		client.setSecure(true);
+		assertEquals(143, client.getPort());
+
+		
 	}
 }
