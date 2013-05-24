@@ -154,6 +154,14 @@ public class IMAPClientTest {
 	}
 	
 	@Test
+	public void shouldBeAbleToOpenFolderIfMailboxSetNull() throws MessagingException {
+		IMAPClient client = new IMAPClient("imap://localhost/mailbox");
+		client.setMailbox(null);
+		Folder f1 = client.getMailboxFolder();
+		assertNotNull(f1);
+	}
+	
+	@Test
 	public void shouldConstructDefaultEmailAddressIfNoneSpecified() {
 		IMAPClient client = new IMAPClient("imap://someuser:pwd@somehost.com:1234/");
 		assertEquals("someuser@somehost.com", client.getEmailAddress());
@@ -177,7 +185,9 @@ public class IMAPClientTest {
 	public void shouldBeAbleToInitialiseUsingPropertiesFileAndPrefix() throws IOException {
 		IMAPClient client = new IMAPClient();
 		InputStream stream = ClassLoader.getSystemResourceAsStream("test.properties");
-		client.initialiseFromProperties(stream, "source.");
+		Properties props = new Properties();
+		props.load(stream);
+		client.initialiseFromProperties(props, "source.");
 		assertEquals("source.com", client.getHost());
 		assertEquals(1234, client.getPort());
 		assertEquals("imaps", client.getProtocol());

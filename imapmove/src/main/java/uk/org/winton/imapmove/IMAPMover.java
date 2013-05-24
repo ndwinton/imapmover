@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 import javax.mail.Address;
 import javax.mail.Flags;
@@ -45,18 +46,27 @@ public class IMAPMover {
 		Message[] msgs = src.getMessages();
 		LOG.info(msgs.length + " message(s) found in source mailbox");
 		Message[] processed = processSourceMessages(msgs);
-		LOG.info(processed.length + " message(s) will be moved");
 		
-		dst.open(Folder.READ_WRITE);
-		src.copyMessages(processed, dst);
-		LOG.info("Messages moved successfully");
-		
-		markNonSkippedMessagesForDeletion(msgs);
-		LOG.info("Original messages marked for deletion");
-		
-		if (expunge) {
-			src.expunge();
+		if (processed.length > 0) {
+			LOG.info(processed.length + " message(s) will be moved");
+			
+			dst.open(Folder.READ_WRITE);
+			src.copyMessages(processed, dst);
+			LOG.info("Messages moved successfully");
+			
+			markNonSkippedMessagesForDeletion(msgs);
+			LOG.info("Moved messages marked for deletion");
+			
+			if (expunge) {
+				src.expunge();
+				LOG.info("Marked messages permanently deleted");
+			}
 		}
+		else {
+			LOG.info("No messages to be moved");
+		}
+		
+		LOG.info("Processing complete");
 	}
 
 	private Message[] processSourceMessages(Message[] original) throws MessagingException {
@@ -185,17 +195,24 @@ public class IMAPMover {
 			mover = new IMAPMover(new IMAPClient(args[0]), new IMAPClient(args[1]));
 			mover.setSubjectPrefix(args[2]);
 		}
-		else if (args.length == 2) {
+		else if (args.length == 1) {
+			Properties props = new Properties();
+			FileInputStream stream = new FileInputStream(new File(args[0]));
+			props.load(stream);
+			stream.close();
+			
 			IMAPClient src = new IMAPClient();
-			src.initialiseFromProperties(new FileInputStream(new File(args[0])), "source.");
+			src.initialiseFromProperties(props, "source.");
+			
 			IMAPClient dest = new IMAPClient();
-			dest.initialiseFromProperties(new FileInputStream(new File(args[0])), "destination.");
+			dest.initialiseFromProperties(props, "destination.");
+			
 			mover = new IMAPMover(src, dest);
-			mover.setSubjectPrefix(args[1]);
+			mover.setSubjectPrefix(props.getProperty("subject.prefix", ""));
 		}
 		else {
 			System.err.println("Usage: IMAPMover src-imap-url dest-imap-url prefix");
-			System.err.println("  or   IMAPMover properties-file prefix");
+			System.err.println("  or   IMAPMover properties-file");
 			System.exit(1);
 		}
 		

@@ -170,8 +170,8 @@ public class IMAPClient {
 
 	public Folder getMailboxFolder() throws MessagingException {
 		getConnectedStore();
-		LOG.debug("Getting mailbox folder: " + mailbox);
-		return store.getFolder(mailbox);
+		LOG.debug("Getting mailbox folder: " + getMailbox());
+		return store.getFolder(getMailbox());
 	}
 
 	public void setEmailAddress(String addr) {
@@ -190,19 +190,17 @@ public class IMAPClient {
 		return properties.getProperty(MAIL_FROM);
 	}
 
-	public void initialiseFromProperties(InputStream stream, String prefix) throws IOException {
+	public void initialiseFromProperties(Properties props, String prefix)  {
 		if (prefix == null) {
 			prefix = "";
 		}
-		Properties props = new Properties();
-		props.load(stream);
 		setHost(props.getProperty(prefix + "host"));
 		setPort(Integer.parseInt(props.getProperty(prefix + "port", "0")));
 		setSecure(Boolean.parseBoolean(props.getProperty(prefix + "secure", "false")));
 		setUsername(props.getProperty(prefix + "username"));
 		setPassword(props.getProperty(prefix + "password"));
 		setEmailAddress(props.getProperty(prefix + "email"));
-		setMailbox(props.getProperty(prefix + "mailbox"));
+		setMailbox(props.getProperty(prefix + "mailbox", DEFAULT_MAILBOX));
 		setDebug(Boolean.parseBoolean(props.getProperty(prefix + "debug", "false")));
 	}
 
