@@ -44,7 +44,7 @@ public class IMAPMover {
 		
 		src.open(Folder.READ_WRITE);
 		Message[] msgs = src.getMessages();
-		LOG.info(msgs.length + " message(s) found in source mailbox");
+		LOG.info(msgs.length + " message" + (msgs.length == 1 ? "" : "s") + " found in source mailbox");
 		Message[] processed = processSourceMessages(msgs);
 		
 		if (processed.length > 0) {
