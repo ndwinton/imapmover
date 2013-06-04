@@ -48,7 +48,7 @@ public class IMAPMover {
 		Message[] processed = processSourceMessages(msgs);
 		
 		if (processed.length > 0) {
-			LOG.info(processed.length + " message(s) will be moved");
+			LOG.info(processed.length + " message" + (processed.length == 1 ? "" : "s") + " will be moved");
 			
 			dst.open(Folder.READ_WRITE);
 			src.copyMessages(processed, dst);
