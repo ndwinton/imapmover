@@ -80,7 +80,7 @@ public class IMAPMover {
 			if (srcMime.getFrom() != null) {
 				from = srcMime.getFrom()[0].toString();
 			}
-			LOG.info("Message: " + srcMime.getSubject() + " (" + from + ")");
+			LOG.info("Message: " + srcMime.getSubject() + " (" + from + ", " + srcMime.getSentDate() + ")");
 			
 			if (messageShouldBeSkipped(srcMime, true)) {
 				continue;
@@ -106,14 +106,14 @@ public class IMAPMover {
 	private boolean messageShouldBeSkipped(MimeMessage msg, boolean doLog) throws MessagingException {
 		if (messageIsFromDestination(msg)) {
 			if (doLog) {
-				LOG.info("From destination -- skipped");
+				LOG.info("Message is from destination -- skipped");
 			}
 			return true;
 		}
 		
 		if (msg.getFlags().contains(Flag.DELETED)) {
 			if (doLog) {
-				LOG.info("Already deleted -- skipped");
+				LOG.info("Message already deleted -- skipped");
 			}
 			return true;
 		}
