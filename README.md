@@ -1,7 +1,8 @@
 # imapmover
 A small tool to move all messages from one IMAP mailbox to another
 
-Copyright 2013 Neil Winton
+---
+Copyright &copy; 2013 Neil Winton
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the
 following conditions are met:
